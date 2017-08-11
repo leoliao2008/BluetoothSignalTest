@@ -10,4 +10,5 @@ public interface StaticData {
     String[] BLUE_TOOTH_PERMISSIONS=new String[]{Manifest.permission.BLUETOOTH,Manifest.permission.BLUETOOTH_ADMIN,Manifest.permission.BLUETOOTH_PRIVILEGED};
     int REQUEST_CODE_BLUE_TOOTH_PERMISSIONS=1997;
     int REQUEST_CODE_ENABLE_BLUETOOTH = 1998;
+    String UUID="ad119043-d88a-462e-99bc-65664055bea5";
 }

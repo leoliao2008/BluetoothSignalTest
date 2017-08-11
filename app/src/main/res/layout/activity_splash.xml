@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.percent.PercentRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.skycaster.bluetoothtest.activity.SplashActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/pic_splash_bg"
+        android:scaleType="centerCrop"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_heightPercent="40%"
+        android:text="欢迎使用思凯微软件！"
+        android:gravity="center"
+        android:textSize="25sp"
+        android:padding="10dp"
+        android:textColor="#fff"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="Ver.1.0.0"
+        android:gravity="center"
+        android:textColor="#fff"
+        android:padding="10dp"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        app:layout_widthPercent="70%"
+        android:layout_height="0dp"
+        app:layout_heightPercent="30%"
+        android:layout_centerInParent="true">
+
+        <Button
+            android:onClick="toServerActivity"
+            android:text="服务端模式"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"/>
+
+        <Button
+            android:onClick="toClientActivity"
+            android:text="客户端模式"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"/>
+
+    </LinearLayout>
+
+
+</android.support.percent.PercentRelativeLayout>

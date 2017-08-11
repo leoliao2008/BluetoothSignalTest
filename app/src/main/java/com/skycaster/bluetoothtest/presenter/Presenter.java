@@ -1,67 +1,195 @@
 package com.skycaster.bluetoothtest.presenter;
 
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
-import android.content.Context;
+import android.bluetooth.BluetoothClass;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
+import android.os.Handler;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
 import com.skycaster.bluetoothtest.StaticData;
-import com.skycaster.bluetoothtest.activity.MainActivity;
-import com.skycaster.bluetoothtest.model.BlueToothModel;
+import com.skycaster.bluetoothtest.activity.ClientActivity;
+import com.skycaster.bluetoothtest.adapter.DeviceListAdapter;
+import com.skycaster.bluetoothtest.base.BaseApplication;
+import com.skycaster.bluetoothtest.model.BlueToothClientModel;
 import com.skycaster.bluetoothtest.model.PermissionModel;
 
+import java.io.IOException;
 import java.util.ArrayList;
-
-import static android.bluetooth.BluetoothAdapter.EXTRA_PREVIOUS_STATE;
-import static android.bluetooth.BluetoothAdapter.EXTRA_STATE;
-import static android.bluetooth.BluetoothAdapter.STATE_OFF;
-import static android.bluetooth.BluetoothAdapter.STATE_ON;
+import java.util.UUID;
 
 /**
  * Created by 廖华凯 on 2017/8/10.
  */
 
 public class Presenter {
-    private MainActivity mActivity;
-    private ArrayList<String> mList=new ArrayList<>();
-    private ArrayAdapter<String> mAdapter;
+    private ClientActivity mActivity;
+    private ArrayList<BluetoothDevice> mDevices=new ArrayList<>();
+    private DeviceListAdapter mAdapter;
     private PermissionModel mPermissionModel;
-    private BluetoothStateChangeReceiver mStateChangeReceiver;
-    private BlueToothModel mBlueToothModel;
+    private BlueToothClientModel mBlueToothClientModel;
+    private Handler mHandler;
+    private ProgressDialog mProgressDialog;
 
-    public Presenter(MainActivity mActivity) {
+    public Presenter(final ClientActivity mActivity) {
         this.mActivity = mActivity;
+        mHandler=new Handler();
         mPermissionModel=new PermissionModel();
-        mBlueToothModel=new BlueToothModel();
+        mBlueToothClientModel =new BlueToothClientModel(new BlueToothClientModel.Callback() {
+            @Override
+            public void onBluetoothStateChange(int preState, int newState) {
+                if(preState== BluetoothAdapter.STATE_ON &&newState==BluetoothAdapter.STATE_TURNING_OFF){
+                    mBlueToothClientModel.cancelDiscoveringDevice(mActivity);
+                    try {
+                        mBlueToothClientModel.disconnectDevice();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    BaseApplication.showToast("蓝牙模块已关闭，终止本次蓝牙通信。");
+                }
+
+            }
+
+            @Override
+            public void onStartDiscoveringDevices() {
+                mProgressDialog = ProgressDialog.show(
+                        mActivity,
+                        "搜索设备",
+                        "正在搜索蓝牙设备,请稍候...",
+                        true,
+                        true,
+                        new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                mBlueToothClientModel.cancelDiscoveringDevice(mActivity);
+                                BaseApplication.showToast("您终止了本次扫描。");
+                            }
+                        }
+                );
+
+            }
+
+            @Override
+            public void onCancelDiscoveringDevices() {
+                if(mProgressDialog!=null){
+                    mProgressDialog.dismiss();
+                }
+                mBlueToothClientModel.unRegisterDiscoverReceiver(mActivity);
+
+            }
+
+            @Override
+            public void onDeviceDiscovered(BluetoothClass bluetoothClass, BluetoothDevice bluetoothDevice) {
+                BaseApplication.showToast("找到了设备 "+bluetoothDevice.getName());
+                updateDeviceList(bluetoothDevice);
+            }
+
+            @Override
+            public void onStartConnectingDevice(BluetoothDevice device) {
+                mProgressDialog=ProgressDialog.show(
+                        mActivity,
+                        "设备连接",
+                        "正在连接蓝牙设备 " + device.getName() + " ,请稍候......",
+                        true,
+                        true,
+                        new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                try {
+                                    mBlueToothClientModel.disconnectDevice();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                BaseApplication.showToast("您终止了本次连接。");
+
+                            }
+                        }
+                );
+
+            }
+
+            @Override
+            public void onFailToConnectDevice(BluetoothDevice device) {
+                if(mProgressDialog!=null){
+                    mProgressDialog.dismiss();
+                }
+
+                BaseApplication.showToast("连接失败。");
+            }
+
+            @Override
+            public void onDeviceConnected(BluetoothDevice bluetoothDevice, BluetoothSocket bluetoothSocket) {
+                if(mProgressDialog!=null){
+                    mProgressDialog.dismiss();
+                }
+                BaseApplication.showToast("连接成功。");
+            }
+
+            @Override
+            public void onDisconnectDevice(BluetoothDevice device) {
+                BaseApplication.showToast("连接取消。");
+            }
+
+
+
+            @Override
+            public void onDataObtained(byte[] data, int dataLen) {
+
+            }
+        });
+    }
+
+    private void updateDeviceList(BluetoothDevice bluetoothDevice) {
+        if(checkIfDuplicate(bluetoothDevice)){
+            return;
+        }
+        mDevices.add(bluetoothDevice);
+        mAdapter.notifyDataSetChanged();
+        mActivity.getListView().smoothScrollToPosition(Integer.MAX_VALUE);
+    }
+
+    private boolean checkIfDuplicate(BluetoothDevice device){
+        for (int i=0;i<mDevices.size();i++){
+            BluetoothDevice temp = mDevices.get(i);
+            if(temp.getAddress().equals(device.getAddress())){
+                return true;
+            }
+        }
+        return false;
     }
 
     public void initData(){
-        mAdapter=new ArrayAdapter<String>(
-                mActivity,
-                android.R.layout.simple_list_item_1,
-                mList
-        );
+        mAdapter=new DeviceListAdapter(mDevices, mActivity, new DeviceListAdapter.Callback() {
+            @Override
+            public void onPressConnect(BluetoothDevice device, int position) {
+                mBlueToothClientModel.connectToServer(device, UUID.fromString(StaticData.UUID));
+            }
+        });
         mActivity.getListView().setAdapter(mAdapter);
+
 
         if(mPermissionModel.checkBlueToothPermissions(mActivity)){
             mPermissionModel.requestBlueToothPermissions(mActivity);
         }
-        registerReceiver();
-        mBlueToothModel.initBluetooth(mActivity);
+        registerReceivers();
     }
 
-    private void registerReceiver(){
-        mStateChangeReceiver=new BluetoothStateChangeReceiver();
-        IntentFilter filter=new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        LocalBroadcastManager.getInstance(mActivity).registerReceiver(mStateChangeReceiver,filter);
+    public void checkIfBluetoothOpen(){
+        if(!mBlueToothClientModel.checkIfBluetoothAvailable(mActivity)){
+            mBlueToothClientModel.requestEnableBluetooth(mActivity);
+        }
+    }
+
+    private void registerReceivers(){
+        mBlueToothClientModel.registerBluetoothStateChangeReceiver(mActivity);
     }
     
-    private void unRegisterReceiver(){
-        LocalBroadcastManager.getInstance(mActivity).unregisterReceiver(mStateChangeReceiver);
+    private void unRegisterReceivers(){
+        mBlueToothClientModel.unRegisterBluetoothStateChangeReceiver(mActivity);
+        mBlueToothClientModel.unRegisterDiscoverReceiver(mActivity);
     }
 
     public void onPermissionRequestResult(int requestCode,String[] permissions,int[] results){
@@ -69,38 +197,30 @@ public class Presenter {
     }
     
     public void onDestroy(){
-        unRegisterReceiver();
+        unRegisterReceivers();
     }
 
-    public void onActivityResult(int requestCode,int resultCode,Intent data){
-        if(requestCode== StaticData.REQUEST_CODE_ENABLE_BLUETOOTH){
-            if(mBlueToothModel.onRequestEnableBluetooth(requestCode, resultCode)){
-                //// TODO: 2017/8/10
-                showLog("REQUEST_CODE_ENABLE_BLUETOOTH == true");
-            }else {
-                //// TODO: 2017/8/10
-                showLog("REQUEST_CODE_ENABLE_BLUETOOTH == false");
-            }
-        }
-
+    public boolean onRequestEnableBluetooth(int requestCode,int resultCode,Intent data){
+        return mBlueToothClientModel.onRequestEnableBluetooth(requestCode, resultCode);
     }
 
-    private class BluetoothStateChangeReceiver extends BroadcastReceiver{
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String newState = intent.getStringExtra(EXTRA_STATE);
-            String preState = intent.getStringExtra(EXTRA_PREVIOUS_STATE);
-            showLog("preState = "+preState);
-            showLog("newState = "+newState);
-            if(preState.equals(STATE_ON)&&newState.equals(STATE_OFF)){
-                //// TODO: 2017/8/10
-                showLog("state on to state off");
-            }else if(preState.equals(STATE_OFF)&&newState.equals(STATE_ON)){
-                //// TODO: 2017/8/10
-                showLog("state off to state on");
-            }
+    public void startDiscoveringDevice(){
+        mBlueToothClientModel.cancelDiscoveringDevice(mActivity);
+        try {
+            mBlueToothClientModel.disconnectDevice();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        mDevices.clear();
+        mDevices.addAll(mBlueToothClientModel.getBondedDevices(mActivity));
+        mBlueToothClientModel.registerDiscoverReceiver(mActivity);
+        mBlueToothClientModel.startDiscoveringDevice(mActivity);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mBlueToothClientModel.cancelDiscoveringDevice(mActivity);
+            }
+        },24000);
     }
 
     private void showLog(String msg){
