@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:icon="@drawable/selector_ic_request_diacoverable"
+        android:title="Request Discoverable"
+        android:id="@+id/menu_server_request_discoverable"
+        app:showAsAction="always"/>
+
+    <item
+        android:visible="false"
+        android:icon="@drawable/selector_ic_disconnect"
+        android:title="Request Disconnect"
+        android:id="@+id/menu_server_disconnect"
+        app:showAsAction="always"/>
+
+
+</menu>

@@ -9,6 +9,7 @@
     tools:context="com.skycaster.bluetoothtest.activity.ClientActivity">
 
     <ListView
+        android:keepScreenOn="true"
         android:id="@+id/list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

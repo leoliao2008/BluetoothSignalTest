@@ -1,10 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.skycaster.bluetoothtest.activity.ServerActivity">
 
-</android.support.constraint.ConstraintLayout>
+    <ListView
+        android:keepScreenOn="true"
+        android:id="@+id/activity_server_list_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <ToggleButton
+        android:id="@+id/activity_server_tgbtn_send_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textOn="当前状态：启动传输"
+        android:textOff="当前状态：停止传输"
+        />
+
+
+
+</LinearLayout>

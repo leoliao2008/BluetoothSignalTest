@@ -25,7 +25,7 @@ import java.util.UUID;
  * Created by 廖华凯 on 2017/8/10.
  */
 
-public class Presenter {
+public class ClientActivityPresenter {
     private ClientActivity mActivity;
     private ArrayList<BluetoothDevice> mDevices=new ArrayList<>();
     private DeviceListAdapter mAdapter;
@@ -34,7 +34,7 @@ public class Presenter {
     private Handler mHandler;
     private ProgressDialog mProgressDialog;
 
-    public Presenter(final ClientActivity mActivity) {
+    public ClientActivityPresenter(final ClientActivity mActivity) {
         this.mActivity = mActivity;
         mHandler=new Handler();
         mPermissionModel=new PermissionModel();
@@ -165,15 +165,12 @@ public class Presenter {
         mAdapter=new DeviceListAdapter(mDevices, mActivity, new DeviceListAdapter.Callback() {
             @Override
             public void onPressConnect(BluetoothDevice device, int position) {
+                showLog("onPressConnect");
                 mBlueToothClientModel.connectToServer(device, UUID.fromString(StaticData.UUID));
             }
         });
         mActivity.getListView().setAdapter(mAdapter);
 
-
-        if(mPermissionModel.checkBlueToothPermissions(mActivity)){
-            mPermissionModel.requestBlueToothPermissions(mActivity);
-        }
         registerReceivers();
     }
 
@@ -191,17 +188,27 @@ public class Presenter {
         mBlueToothClientModel.unRegisterBluetoothStateChangeReceiver(mActivity);
         mBlueToothClientModel.unRegisterDiscoverReceiver(mActivity);
     }
-
-    public void onPermissionRequestResult(int requestCode,String[] permissions,int[] results){
-        mPermissionModel.onPermissionResult(mActivity,requestCode,permissions,results);
-    }
     
     public void onDestroy(){
         unRegisterReceivers();
     }
 
-    public boolean onRequestEnableBluetooth(int requestCode,int resultCode,Intent data){
-        return mBlueToothClientModel.onRequestEnableBluetooth(requestCode, resultCode);
+    public void onRequestEnableBluetooth(int requestCode,int resultCode,Intent data){
+        mBlueToothClientModel.onRequestEnableBluetooth(
+                requestCode,
+                resultCode,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        BaseApplication.showToast("蓝牙启动成功。");
+                    }
+                }, new Runnable() {
+                    @Override
+                    public void run() {
+                        BaseApplication.showToast("蓝牙启动被拒，程序将退出。");
+                        mActivity.onBackPressed();
+                    }
+                });
     }
 
     public void startDiscoveringDevice(){

@@ -4,20 +4,16 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.skycaster.bluetoothtest.StaticData;
-import com.skycaster.bluetoothtest.base.BaseApplication;
 import com.skycaster.bluetoothtest.base.BaseBluetoothModel;
 
 import java.io.IOException;
@@ -26,7 +22,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
-import static android.app.Activity.RESULT_OK;
 import static android.bluetooth.BluetoothAdapter.EXTRA_PREVIOUS_STATE;
 import static android.bluetooth.BluetoothAdapter.EXTRA_STATE;
 
@@ -38,11 +33,9 @@ import static android.bluetooth.BluetoothAdapter.EXTRA_STATE;
 /**
  * 教程 https://developer.android.google.cn/guide/topics/connectivity/bluetooth.html
  */
-public class BlueToothClientModel extends BaseBluetoothModel{
+public class BlueToothClientModel extends BaseBluetoothModel {
 
 
-    private BluetoothManager mBluetoothManager;
-    private BluetoothAdapter mBluetoothAdapter;
     private BluetoothStateChangeReceiver mBluetoothStateChangeReceiver;
     private Callback mCallback;
     private BluetoothDeviceDiscoverReceiver mDeviceDiscoverReceiver;
@@ -51,52 +44,7 @@ public class BlueToothClientModel extends BaseBluetoothModel{
 
     public BlueToothClientModel(Callback callback) {
         mCallback = callback;
-        mHandler=new Handler(Looper.getMainLooper());
-    }
-
-    public BluetoothManager getBluetoothManager(Activity activity){
-        if(mBluetoothManager==null){
-            mBluetoothManager=(BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
-        }
-        return mBluetoothManager;
-    }
-
-    public BluetoothAdapter getBluetoothAdapter(Activity activity){
-        if(mBluetoothAdapter==null){
-            mBluetoothAdapter = getBluetoothManager(activity).getAdapter();
-        }
-        return mBluetoothAdapter;
-    }
-
-    public boolean checkIfBluetoothAvailable(Activity activity){
-        if(!activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)){
-            activity.onBackPressed();
-            BaseApplication.showToast("设备无蓝牙功能，退出本页面。");
-            return false;
-        }
-        if(getBluetoothManager(activity) ==null){
-            activity.onBackPressed();
-            BaseApplication.showToast("设备无蓝牙功能，退出本页面。");
-            return false;
-        }
-        if(getBluetoothAdapter(activity)==null){
-            activity.onBackPressed();
-            BaseApplication.showToast("设备无蓝牙功能，退出本页面。");
-            return false;
-        }
-        return getBluetoothAdapter(activity).isEnabled();
-    }
-
-    public void requestEnableBluetooth(Activity activity){
-        Intent intent=new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(intent, StaticData.REQUEST_CODE_ENABLE_BLUETOOTH);
-    }
-
-    public boolean onRequestEnableBluetooth(int requestCode, int resultCode){
-        if(requestCode==StaticData.REQUEST_CODE_ENABLE_BLUETOOTH){
-            return resultCode==RESULT_OK;
-        }
-        return false;
+        mHandler=new Handler();
     }
 
     public void registerBluetoothStateChangeReceiver(Activity activity){
@@ -156,7 +104,6 @@ public class BlueToothClientModel extends BaseBluetoothModel{
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            showLog(action);
             if(!TextUtils.isEmpty(action)&&BluetoothDevice.ACTION_FOUND.equals(action)){
                 BluetoothClass bluetoothClass =intent.getParcelableExtra(BluetoothDevice.EXTRA_CLASS);
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -170,6 +117,7 @@ public class BlueToothClientModel extends BaseBluetoothModel{
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Looper.prepare();
                 try {
                     mCallback.onStartConnectingDevice(server);
                     mSocket = server.createRfcommSocketToServiceRecord(uuid);

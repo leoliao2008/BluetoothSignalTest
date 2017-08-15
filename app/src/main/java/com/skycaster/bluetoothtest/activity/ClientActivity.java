@@ -3,19 +3,17 @@ package com.skycaster.bluetoothtest.activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
 import com.skycaster.bluetoothtest.R;
-import com.skycaster.bluetoothtest.base.BaseApplication;
-import com.skycaster.bluetoothtest.presenter.Presenter;
+import com.skycaster.bluetoothtest.presenter.ClientActivityPresenter;
 
 public class ClientActivity extends AppCompatActivity {
     private ListView mListView;
-    private Presenter mPresenter;
+    private ClientActivityPresenter mClientActivityPresenter;
 
     public static void start(Context context) {
         Intent starter = new Intent(context, ClientActivity.class);
@@ -27,14 +25,14 @@ public class ClientActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-        mPresenter=new Presenter(this);
-        mPresenter.initData();
+        mClientActivityPresenter =new ClientActivityPresenter(this);
+        mClientActivityPresenter.initData();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mPresenter.checkIfBluetoothOpen();
+        mClientActivityPresenter.checkIfBluetoothOpen();
     }
 
     private void initView() {
@@ -48,35 +46,27 @@ public class ClientActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        boolean enableBluetooth = mPresenter.onRequestEnableBluetooth(requestCode, resultCode, data);
-        if(enableBluetooth){
-            BaseApplication.showToast("你开启了蓝牙。");
-        }
+       mClientActivityPresenter.onRequestEnableBluetooth(requestCode, resultCode, data);
 
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        mPresenter.onPermissionRequestResult(requestCode,permissions,grantResults);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mPresenter.onDestroy();
+        mClientActivityPresenter.onDestroy();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main_activity,menu);
+        getMenuInflater().inflate(R.menu.menu_client_activity,menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
-            case R.id.menu_main_discover_device:
-                mPresenter.startDiscoveringDevice();
+            case R.id.menu_client_activity_discover_device:
+                mClientActivityPresenter.startDiscoveringDevice();
                 break;
         }
         return true;

@@ -41,7 +41,7 @@ public class PermissionModel {
                     if(activity.shouldShowRequestPermissionRationale(permissions[i])){
                         AlertDialogUtil.showDialog(
                                 activity,
-                                "为了保证程序正常运行，需要获取蓝牙权限，点击确定重新申请，点击取消退出此页面",
+                                "为了保证程序正常运行，需要获取以下权限：\r\n+"+permissions[i]+"\r\n，点击确定重新申请，点击取消退出此页面",
                                 new Runnable() {
                                     @Override
                                     public void run() {
@@ -60,7 +60,7 @@ public class PermissionModel {
                     }else {
                         AlertDialogUtil.showDialog(
                                 activity,
-                                "您已经禁用了蓝牙权限，请到系统设置中为本程序分配蓝牙权限。",
+                                "您已经禁用了以下权限：\r\n" + permissions[i] + "\r\n请到系统设置中为本程序分配蓝牙权限。",
                                 new Runnable() {
                                     @Override
                                     public void run() {
