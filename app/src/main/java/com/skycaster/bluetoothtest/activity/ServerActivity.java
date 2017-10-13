@@ -13,7 +13,6 @@ import android.widget.ToggleButton;
 import com.skycaster.bluetoothtest.R;
 import com.skycaster.bluetoothtest.presenter.ServerActivityPresenter;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ServerActivity extends AppCompatActivity {
@@ -62,12 +61,6 @@ public class ServerActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_server_activity,menu);
-        MenuItem itemDisconnect = menu.findItem(R.id.menu_server_disconnect);
-        if(isRemoteDeviceConnected.get()){
-            itemDisconnect.setVisible(true);
-        }else {
-            itemDisconnect.setVisible(false);
-        }
         return true;
     }
 
@@ -75,22 +68,7 @@ public class ServerActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.menu_server_request_discoverable:
-                if(!isInDiscoverableMode.get()){
-                    mPresenter.requestDiscoverable();
-                }else {
-                    try {
-                        mPresenter.cancelAccepting();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                break;
-            case R.id.menu_server_disconnect:
-                try {
-                    mPresenter.disconnect();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                mPresenter.requestDiscoverable();
                 break;
         }
         return true;

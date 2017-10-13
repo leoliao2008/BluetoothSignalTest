@@ -61,8 +61,10 @@ public class ServerActivityPresenter {
             public void onDiscoverableModeChange(int preState, int newState) {
                 if(preState!=SCAN_MODE_CONNECTABLE_DISCOVERABLE&&newState==SCAN_MODE_CONNECTABLE_DISCOVERABLE){
                     mActivity.isInDiscoverableMode.compareAndSet(false,true);
+                    BaseApplication.showToast("启动被搜索功能......");
                 }else if(preState== SCAN_MODE_CONNECTABLE_DISCOVERABLE&&newState!= SCAN_MODE_CONNECTABLE_DISCOVERABLE){
                     mActivity.isInDiscoverableMode.compareAndSet(true,false);
+                    BaseApplication.showToast("停止被搜索功能......");
                 }
             }
 
@@ -72,14 +74,7 @@ public class ServerActivityPresenter {
                     mProgressDialog.dismiss();
                 }
                 mBluetoothSocket=bluetoothSocket;
-                mActivity.isRemoteDeviceConnected.compareAndSet(false,true);
-                mActivity.supportInvalidateOptionsMenu();
                 BaseApplication.showToast("远程设备连接成功！");
-                try {
-                    cancelAccepting();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         });
     }
@@ -110,6 +105,9 @@ public class ServerActivityPresenter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        if(mBluetoothServerSocket!=null){
+            startAccepting();
+        }
     }
 
     private void registerReceivers(){
@@ -124,6 +122,11 @@ public class ServerActivityPresenter {
 
     public void onDestroy(){
         unRegisterReceivers();
+        try {
+            cancelAccepting();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void checkIfBluetoothEnable(){
@@ -180,14 +183,36 @@ public class ServerActivityPresenter {
 
     public void startSendingData(){
         isSendingData.compareAndSet(false,true);
-        int i=0;
-        while (isSendingData.get()){
-            i++;
-            String testLine = StaticData.TEST_LINES[i % 3];
-            mServerModel.sendTestLine(testLine,mBluetoothSocket);
-            updateListView(testLine);
-            SystemClock.sleep(1000);
-        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int i=0;
+                while (isSendingData.get()){
+                    i++;
+                    final String testLine = StaticData.TEST_LINES[i % StaticData.TEST_LINES.length];
+                    try {
+                        mServerModel.sendTestLine(testLine,mBluetoothSocket);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        isSendingData.compareAndSet(true,false);
+                        break;
+                    } catch (NullPointerException e){
+                        e.printStackTrace();
+                        isSendingData.compareAndSet(true,false);
+                        break;
+                    }
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateListView(testLine);
+                        }
+                    });
+                    SystemClock.sleep(1000);
+                }
+            }
+        }).start();
+
     }
 
     private void updateListView(String msg){
@@ -233,6 +258,7 @@ public class ServerActivityPresenter {
             mServerModel.accept(mBluetoothServerSocket);
         }
     }
+
 
     public void cancelAccepting() throws IOException {
         if(mBluetoothServerSocket!=null){

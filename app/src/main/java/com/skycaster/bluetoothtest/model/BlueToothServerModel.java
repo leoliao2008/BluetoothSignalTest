@@ -38,6 +38,7 @@ public class BlueToothServerModel extends BaseBluetoothModel {
     private Handler mHandler;
     private BluetoothStateChangeReceiver mBluetoothStateChangeReceiver;
     private DiscoverableModeStateReceiver mDiscoverableModeStateReceiver;
+    private BluetoothSocket mBluetoothSocket;
 
     public BlueToothServerModel(Callback callback) {
         mCallback = callback;
@@ -111,22 +112,24 @@ public class BlueToothServerModel extends BaseBluetoothModel {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Looper.prepare();
                 while (true){
-                    BluetoothSocket bluetoothSocket;
                     try {
-                        bluetoothSocket = serverSocket.accept();
+                        mBluetoothSocket = serverSocket.accept();
                     } catch (IOException e) {
                         e.printStackTrace();
                         break;
                     }
-                    if(bluetoothSocket!=null){
-                        mCallback.onGettingBluetoothSocket(bluetoothSocket);
-                        try {
-                            serverSocket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    if(mBluetoothSocket !=null){
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mCallback.onGettingBluetoothSocket(mBluetoothSocket);
+                            }
+                        });
                         break;
+                    }else {
+                        showLog("blue tooth socket is null, retry...");
                     }
                 }
             }
@@ -141,14 +144,9 @@ public class BlueToothServerModel extends BaseBluetoothModel {
         socket.close();
     }
 
-    public void sendTestLine(String testLine,BluetoothSocket socket){
-        try {
-            OutputStream outputStream = socket.getOutputStream();
-            outputStream.write(testLine.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    public void sendTestLine(String testLine,BluetoothSocket socket) throws IOException,NullPointerException {
+        OutputStream outputStream = socket.getOutputStream();
+        outputStream.write(testLine.getBytes());
     }
 
 

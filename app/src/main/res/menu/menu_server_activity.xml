@@ -7,12 +7,12 @@
         android:id="@+id/menu_server_request_discoverable"
         app:showAsAction="always"/>
 
-    <item
-        android:visible="false"
-        android:icon="@drawable/selector_ic_disconnect"
-        android:title="Request Disconnect"
-        android:id="@+id/menu_server_disconnect"
-        app:showAsAction="always"/>
+    <!--<item-->
+        <!--android:visible="false"-->
+        <!--android:icon="@drawable/selector_ic_disconnect"-->
+        <!--android:title="Request Disconnect"-->
+        <!--android:id="@+id/menu_server_disconnect"-->
+        <!--app:showAsAction="always"/>-->
 
 
 </menu>
